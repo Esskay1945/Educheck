@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduCheck — Academic Integrity & Prose Reconstruction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --maroon-900: #3b0612;
+            --maroon-800: #52091a;
+            --maroon-700: #700d24;
+            --maroon-600: #85122d;
+            --maroon-500: #9e1b38;
+            --maroon-100: #fae8ec;
+            --maroon-50: #fdf5f7;
+            
+            --bg-page: #fbf9fa;
+            --bg-surface: #ffffff;
+            --bg-surface-subtle: #f7f3f4;
+            
+            --border-light: #eedfe3;
+            --border-focus: #85122d;
+            
+            --text-primary: #1e1215;
+            --text-secondary: #5a464c;
+            --text-muted: #8c737a;
+            
+            --sim-color: #a81329;
+            --sim-bg: #ffebee;
+            --ai-color: #c25e00;
+            --ai-bg: #fff3e0;
+            --safe-color: #1e7e46;
+            --safe-bg: #e8f5e9;
+            --flag-color: #b91c1c;
+            --flag-bg: #fef2f2;
+
+            --shadow-sm: 0 2px 8px rgba(82, 9, 26, 0.04);
+            --shadow-md: 0 8px 24px rgba(82, 9, 26, 0.07);
+            --shadow-lg: 0 16px 40px rgba(82, 9, 26, 0.1);
+            --radius-md: 14px;
+            --radius-lg: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Bar */
+        header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-light);
+            padding: 16px 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--maroon-700), var(--maroon-500));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 800;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(112, 13, 36, 0.25);
+        }
+
+        .brand-text h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--maroon-800);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-badge {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            background: var(--maroon-100);
+            color: var(--maroon-700);
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+
+        .brand-tagline {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 30px;
+            background: var(--bg-surface-subtle);
+            border: 1px solid var(--border-light);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+        }
+
+        /* Workspace Container */
+        .workspace-container {
+            max-width: 1440px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 28px 32px 60px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Top Hero Info Bar */
+        .hero-banner {
+            background: linear-gradient(135deg, #ffffff 0%, var(--maroon-50) 100%);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 22px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .hero-title h2 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--maroon-900);
+            letter-spacing: -0.02em;
+        }
+
+        .hero-title p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .duo-flow {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .engine-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fff;
+            padding: 8px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .engine-chip-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--maroon-700);
+            color: #fff;
+            font-weight: 800;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .engine-chip-icon.remedy {
+            background: #9e1b38;
+        }
+
+        .engine-chip-name {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .engine-chip-desc {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .flow-arrow {
+            color: var(--maroon-500);
+            font-weight: 800;
+            font-size: 1.2rem;
+        }
+
+        /* Two-Column Grid */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        @media (max-width: 1080px) {
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Panel Container */
+        .workspace-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.3s ease;
+        }
+
+        .workspace-panel.active-panel {
+            border-color: var(--maroon-500);
+        }
+
+        /* Panel Header */
+        .panel-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-light);
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .panel-badge {
+            background: var(--maroon-700);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            letter-spacing: 0.04em;
+        }
+
+        .panel-badge.badge-artisan {
+            background: #85122d;
+        }
+
+        .panel-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--maroon-900);
+        }
+
+        .panel-sub {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .btn-ghost {
+            background: none;
+            border: 1px solid var(--border-light);
+            color: var(--maroon-700);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-ghost:hover {
+            background: var(--maroon-50);
+            border-color: var(--maroon-500);
+        }
+
+        /* Panel Body */
+        .panel-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        /* Tab Switcher for Input */
+        .tab-switcher {
+            display: flex;
+            background: var(--bg-surface-subtle);
+            padding: 4px;
+            border-radius: 10px;
+            gap: 6px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #fff;
+            color: var(--maroon-800);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* File Upload Box */
+        .upload-dropzone {
+            border: 2px dashed var(--border-light);
+            background: var(--bg-surface-subtle);
+            border-radius: var(--radius-md);
+            padding: 26px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .upload-dropzone:hover, .upload-dropzone.dragover {
+            border-color: var(--maroon-500);
+            background: var(--maroon-50);
+        }
+
+        .upload-icon {
+            font-size: 2.2rem;
+            color: var(--maroon-600);
+            margin-bottom: 6px;
+        }
+
+        .upload-label {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--maroon-900);
+        }
+
+        .upload-hint {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .supported-tags {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .format-badge {
+            background: #ffffff;
+            border: 1px solid var(--border-light);
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--maroon-700);
+            padding: 2px 7px;
+            border-radius: 6px;
+        }
+
+        /* Text Area */
+        .text-input-wrap {
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            height: 220px;
+            padding: 14px 16px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            background: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            line-height: 1.6;
+        }
+
+        textarea:focus {
+            border-color: var(--maroon-500);
+            box-shadow: 0 0 0 3px rgba(133, 18, 45, 0.12);
+        }
+
+        .text-stats-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        /* Action Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--maroon-700), var(--maroon-600));
+            color: #ffffff;
+            border: none;
+            padding: 13px 24px;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 14px rgba(112, 13, 36, 0.25);
+            transition: all 0.25s ease;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, var(--maroon-800), var(--maroon-700));
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(112, 13, 36, 0.35);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, #85122d, #a81c3c);
+            color: #fff;
+            border: none;
+            padding: 13px 24px;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 14px rgba(133, 18, 45, 0.25);
+            transition: all 0.25s ease;
+        }
+
+        .btn-accent:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(133, 18, 45, 0.35);
+        }
+
+        .btn-accent:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* 4 Core Pillars Metrics Section */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        .metric-card {
+            background: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .metric-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .metric-title {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .metric-value {
+            font-size: 2.1rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .metric-value.sim {
+            color: var(--sim-color);
+        }
+
+        .metric-value.ai {
+            color: var(--ai-color);
+        }
+
+        .metric-sub {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .metric-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        .badge-sim {
+            background: var(--sim-bg);
+            color: var(--sim-color);
+        }
+
+        .badge-ai {
+            background: var(--ai-bg);
+            color: var(--ai-color);
+        }
+
+        /* Flags and Anomalies Card */
+        .flags-card {
+            background: #ffffff;
+            border: 1px solid var(--border-light);
+            border-left: 4px solid var(--flag-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .flags-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .flags-title {
+            font-size: 0.86rem;
+            font-weight: 800;
+            color: var(--maroon-900);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flags-count-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: var(--flag-bg);
+            color: var(--flag-color);
+        }
+
+        .anomalies-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .anomaly-item {
+            background: var(--bg-surface-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .anomaly-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .anomaly-name {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--maroon-800);
+        }
+
+        .anomaly-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .anomaly-desc {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Highlighted Document Viewer */
+        .annotated-text-panel {
+            background: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            max-height: 260px;
+            overflow-y: auto;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .mark-plagiarism {
+            background-color: var(--sim-bg);
+            color: var(--sim-color);
+            border-bottom: 2px solid var(--sim-color);
+            padding: 1px 3px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .mark-ai {
+            background-color: var(--ai-bg);
+            color: var(--ai-color);
+            border-bottom: 2px dashed var(--ai-color);
+            padding: 1px 3px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* Source-Specific Match List */
+        .details-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .details-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--maroon-800);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .source-pill-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 170px;
+            overflow-y: auto;
+        }
+
+        .source-pill {
+            background: var(--bg-surface-subtle);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .source-pill:hover {
+            border-color: var(--maroon-500);
+            background: var(--maroon-50);
+        }
+
+        .source-pill-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .source-name {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--maroon-900);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 75%;
+        }
+
+        .source-pct {
+            background: var(--maroon-100);
+            color: var(--maroon-700);
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .source-bar-wrap {
+            width: 100%;
+            height: 4px;
+            background: #eedfe3;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .source-bar-fill {
+            height: 100%;
+            background: var(--maroon-600);
+            border-radius: 2px;
+        }
+
+        /* Artisan Remediation Display */
+        .remedy-output-panel {
+            background: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            min-height: 260px;
+            max-height: 420px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .empty-placeholder {
+            min-height: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+            color: var(--text-muted);
+            border: 2px dashed var(--border-light);
+            border-radius: var(--radius-md);
+        }
+
+        .placeholder-icon {
+            font-size: 2.2rem;
+            color: var(--maroon-500);
+            margin-bottom: 8px;
+            opacity: 0.7;
+        }
+
+        /* Verification Score Comparison Delta */
+        .score-delta-bar {
+            background: linear-gradient(135deg, #ffffff 0%, var(--maroon-50) 100%);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+        }
+
+        .delta-item {
+            text-align: center;
+        }
+
+        .delta-title {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .delta-flow {
+            font-size: 1.2rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+        }
+
+        .delta-old {
+            color: var(--text-muted);
+            text-decoration: line-through;
+            font-size: 0.95rem;
+        }
+
+        .delta-new {
+            color: var(--safe-color);
+        }
+
+        .delta-arrow {
+            color: var(--maroon-500);
+            font-size: 0.85rem;
+        }
+
+        /* Changes eliminated chips */
+        .tell-chip-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tell-chip {
+            background: var(--maroon-50);
+            border: 1px solid var(--border-light);
+            color: var(--maroon-700);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--maroon-900);
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            z-index: 300;
+        }
+
+        .toast.show {
+            display: block;
+            animation: fadein 0.3s;
+        }
+
+        @keyframes fadein {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <a href="/" class="brand">
+            <div class="brand-icon">E</div>
+            <div class="brand-text">
+                <h1>EduCheck <span class="brand-badge">Forensic Studio</span></h1>
+                <div class="brand-tagline">Academic Integrity & Prose Reconstruction Engine</div>
+            </div>
+        </a>
+
+        <div class="header-actions">
+            <div class="status-pill">
+                <div class="status-dot"></div>
+                <span>Forensic Engine Online</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Workspace Container -->
+    <main class="workspace-container">
+
+        <!-- Hero Flow Visualizer -->
+        <section class="hero-banner">
+            <div class="hero-title">
+                <h2>Autonomous Plagiarism Check & Humanization</h2>
+                <p>Sentinel audits multi-source similarity, AI cadence, and hidden tampering; Artisan reconstructs prose into authentic human style.</p>
+            </div>
+            <div class="duo-flow">
+                <div class="engine-chip">
+                    <div class="engine-chip-icon">S</div>
+                    <div>
+                        <div class="engine-chip-name">Sentinel</div>
+                        <div class="engine-chip-desc">Similarity, AI & Anomaly Audit</div>
+                    </div>
+                </div>
+                <div class="flow-arrow">➔</div>
+                <div class="engine-chip">
+                    <div class="engine-chip-icon remedy">A</div>
+                    <div>
+                        <div class="engine-chip-name">Artisan</div>
+                        <div class="engine-chip-desc">Autonomous Style Remediation</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Two-Column Grid -->
+        <div class="workspace-grid">
+
+            <!-- LEFT: SENTINEL - THE FORENSIC EXAMINER -->
+            <div class="workspace-panel active-panel" id="sentinelPanel">
+                <div class="panel-header">
+                    <div class="panel-header-left">
+                        <span class="panel-badge">SENTINEL</span>
+                        <div>
+                            <div class="panel-title">Forensic Detection Engine</div>
+                            <div class="panel-sub">Multi-source web similarity, AI content scoring & anomaly inspection</div>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn-ghost" onclick="clearTextInput()">Clear</button>
+                    </div>
+                </div>
+
+                <div class="panel-body">
+                    <!-- Tab Switcher -->
+                    <div class="tab-switcher">
+                        <button class="tab-btn active" id="tabTextBtn">Direct Text Input</button>
+                        <button class="tab-btn" id="tabUploadBtn">Upload Any Document</button>
+                    </div>
+
+                    <!-- Direct Text Box -->
+                    <div id="textInputContainer" class="text-input-wrap">
+                        <textarea id="documentText" placeholder="Paste your essay, paper, or research text here to audit for similarity, AI generation, and structural anomalies..."></textarea>
+                        <div class="text-stats-bar">
+                            <span id="wordCountLabel">0 words | 0 characters</span>
+                            <span style="cursor:pointer; color:var(--maroon-600); font-weight:600;" onclick="clearTextInput()">Clear text</span>
+                        </div>
+                    </div>
+
+                    <!-- Universal Document Upload Box -->
+                    <div id="uploadContainer" style="display: none;">
+                        <div class="upload-dropzone" id="dropzone">
+                            <div class="upload-icon">📂</div>
+                            <div class="upload-label">Click or drop any document to upload</div>
+                            <div class="upload-hint">Supports all document types: PDF, Word (DOCX/DOC), Text, Markdown, RTF, HTML, ODT, CSV, etc.</div>
+                            <div class="supported-tags">
+                                <span class="format-badge">.PDF</span>
+                                <span class="format-badge">.DOCX</span>
+                                <span class="format-badge">.DOC</span>
+                                <span class="format-badge">.TXT</span>
+                                <span class="format-badge">.MD</span>
+                                <span class="format-badge">.RTF</span>
+                                <span class="format-badge">.HTML</span>
+                                <span class="format-badge">.ODT</span>
+                            </div>
+                            <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt,.md,.rtf,.odt,.html,.htm,.csv,.json,.tex,text/*,*/*" style="display: none;">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button for Sentinel -->
+                    <button class="btn-primary" id="runSentinelBtn">
+                        <span id="sentinelBtnText">🔍 Run Complete Forensic Audit</span>
+                        <div class="spinner" id="sentinelSpinner" style="display: none;"></div>
+                    </button>
+
+                    <!-- Sentinel Live Metrics: 4 Core Pillars -->
+                    <div id="sentinelResults" style="display: none; flex-direction: column; gap: 16px;">
+                        
+                        <!-- 1 & 2: Similarity and AI Score Cards -->
+                        <div class="metrics-grid">
+                            <!-- Overall Similarity Score -->
+                            <div class="metric-card">
+                                <div class="metric-card-top">
+                                    <div class="metric-title">Overall Similarity</div>
+                                    <span class="metric-badge badge-sim" id="badgeSimVerdict">Evaluating</span>
+                                </div>
+                                <div class="metric-value sim" id="metricSimilarity">--%</div>
+                                <div class="metric-sub">Total overlapping text matching web pages, published works & documents.</div>
+                            </div>
+
+                            <!-- AI-Generated Content Score -->
+                            <div class="metric-card">
+                                <div class="metric-card-top">
+                                    <div class="metric-title">AI-Generated Content</div>
+                                    <span class="metric-badge badge-ai" id="badgeAIVerdict">Evaluating</span>
+                                </div>
+                                <div class="metric-value ai" id="metricAI">--%</div>
+                                <div class="metric-sub">Proportion of text showing synthetic cadence, low burstiness & stock AI syntax.</div>
+                            </div>
+                        </div>
+
+                        <!-- 3: Flags and Anomalies -->
+                        <div class="flags-card" id="flagsContainer">
+                            <div class="flags-header">
+                                <div class="flags-title">
+                                    <span>🚩 Flags & Structural Anomalies</span>
+                                </div>
+                                <span class="flags-count-badge" id="flagsCountBadge">0 Flags Detected</span>
+                            </div>
+                            <div class="anomalies-list" id="anomaliesList"></div>
+                        </div>
+
+                        <!-- Highlighted Document View -->
+                        <div>
+                            <div class="details-title" style="margin-bottom: 6px;">
+                                <span>Diagnostic Document Markup</span>
+                                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">
+                                    <span style="color: var(--sim-color);">■ Red = Similar Web Text</span> | 
+                                    <span style="color: var(--ai-color);">■ Orange = AI Cadence</span>
+                                </span>
+                            </div>
+                            <div class="annotated-text-panel" id="annotatedTextDisplay"></div>
+                        </div>
+
+                        <!-- 4: Source-Specific Match Breakdown -->
+                        <div class="details-section" id="sourcesSection">
+                            <div class="details-title">
+                                <span>Source-Specific Match Percentages</span>
+                                <span id="sourceCountBadge" style="font-size: 0.72rem; color: var(--text-muted);">0 found</span>
+                            </div>
+                            <div class="source-pill-list" id="sourcesList"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: ARTISAN - THE REMEDIATION & HUMANIZER STUDIO -->
+            <div class="workspace-panel" id="artisanPanel">
+                <div class="panel-header">
+                    <div class="panel-header-left">
+                        <span class="panel-badge badge-artisan">ARTISAN</span>
+                        <div>
+                            <div class="panel-title">Prose Reconstruction Studio</div>
+                            <div class="panel-sub">Remediates similarity, strips AI tells, and cleans anomalies</div>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn-ghost" id="copyResultBtn" style="display: none;">📋 Copy Clean Text</button>
+                    </div>
+                </div>
+
+                <div class="panel-body">
+                    <!-- Solve Banner -->
+                    <div style="background: var(--bg-surface-subtle); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-light); font-size: 0.82rem; color: var(--text-secondary);">
+                        Artisan consumes Sentinel's forensic report, rewrites matched phrases into original prose, eliminates robotic cadence, cleans hidden characters, and performs a verification pass.
+                    </div>
+
+                    <!-- Run Artisan Button -->
+                    <button class="btn-accent" id="runArtisanBtn">
+                        <span id="artisanBtnText">✨ Reconstruct with Artisan (Humanizer)</span>
+                        <div class="spinner" id="artisanSpinner" style="display: none;"></div>
+                    </button>
+
+                    <!-- Score Comparison Delta -->
+                    <div id="scoreDeltaSection" style="display: none;">
+                        <div class="score-delta-bar">
+                            <div class="delta-item">
+                                <div class="delta-title">Overall Similarity</div>
+                                <div class="delta-flow">
+                                    <span class="delta-old" id="deltaPlagOld">--%</span>
+                                    <span class="delta-arrow">➔</span>
+                                    <span class="delta-new" id="deltaPlagNew">--%</span>
+                                </div>
+                            </div>
+                            <div class="delta-item">
+                                <div class="delta-title">AI Content</div>
+                                <div class="delta-flow">
+                                    <span class="delta-old" id="deltaAIOld">--%</span>
+                                    <span class="delta-arrow">➔</span>
+                                    <span class="delta-new" id="deltaAINew">--%</span>
+                                </div>
+                            </div>
+                            <div class="delta-item">
+                                <div class="delta-title">Integrity Score</div>
+                                <div class="delta-flow">
+                                    <span class="delta-old" id="deltaIntegrityOld">--</span>
+                                    <span class="delta-arrow">➔</span>
+                                    <span class="delta-new" id="deltaIntegrityNew">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Output Box / Placeholder -->
+                    <div>
+                        <div class="details-title" style="margin-bottom: 6px;">Remediated Humanized Document</div>
+                        <div id="artisanPlaceholder" class="empty-placeholder">
+                            <div class="placeholder-icon">🛡️</div>
+                            <div style="font-weight: 700; color: var(--maroon-900);">Awaiting Sentinel Audit</div>
+                            <div style="font-size: 0.8rem; margin-top: 4px;">Run Sentinel first or click Reconstruct to let Artisan rewrite matches and eliminate AI tells.</div>
+                        </div>
+                        <div id="artisanOutputDisplay" class="remedy-output-panel" style="display: none;"></div>
+                    </div>
+
+                    <!-- Changes Summary & Tells Eliminated -->
+                    <div id="artisanDetailsSection" style="display: none; flex-direction: column; gap: 12px;">
+                        <div class="details-section">
+                            <div class="details-title">Structural Tells & Flags Eliminated</div>
+                            <div class="tell-chip-wrap" id="eliminatedTellsList"></div>
+                        </div>
+                        <div class="details-section">
+                            <div class="details-title">Transformation Log</div>
+                            <ul id="changesList" style="font-size: 0.8rem; color: var(--text-secondary); padding-left: 18px; line-height: 1.6;"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toastMessage"></div>
+
+    <script>
+        let currentSentinelReport = null;
+        let lastHumanizedText = "";
+
+        // DOM elements
+        const documentText = document.getElementById('documentText');
+        const wordCountLabel = document.getElementById('wordCountLabel');
+
+        const runSentinelBtn = document.getElementById('runSentinelBtn');
+        const sentinelBtnText = document.getElementById('sentinelBtnText');
+        const sentinelSpinner = document.getElementById('sentinelSpinner');
+        const sentinelResults = document.getElementById('sentinelResults');
+
+        const runArtisanBtn = document.getElementById('runArtisanBtn');
+        const artisanBtnText = document.getElementById('artisanBtnText');
+        const artisanSpinner = document.getElementById('artisanSpinner');
+        const artisanPlaceholder = document.getElementById('artisanPlaceholder');
+        const artisanOutputDisplay = document.getElementById('artisanOutputDisplay');
+        const copyResultBtn = document.getElementById('copyResultBtn');
+
+        const scoreDeltaSection = document.getElementById('scoreDeltaSection');
+        const artisanDetailsSection = document.getElementById('artisanDetailsSection');
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+
+        // Tabs
+        document.getElementById('tabTextBtn').addEventListener('click', (e) => {
+            e.target.classList.add('active');
+            document.getElementById('tabUploadBtn').classList.remove('active');
+            document.getElementById('textInputContainer').style.display = 'block';
+            document.getElementById('uploadContainer').style.display = 'none';
+        });
+
+        document.getElementById('tabUploadBtn').addEventListener('click', (e) => {
+            e.target.classList.add('active');
+            document.getElementById('tabTextBtn').classList.remove('active');
+            document.getElementById('textInputContainer').style.display = 'none';
+            document.getElementById('uploadContainer').style.display = 'block';
+        });
+
+        // Text input stats
+        documentText.addEventListener('input', () => {
+            updateStats();
+        });
+
+        function updateStats() {
+            const val = documentText.value.trim();
+            const words = val ? val.split(/\s+/).length : 0;
+            const chars = val.length;
+            wordCountLabel.textContent = `${words} words | ${chars} characters`;
+        }
+
+        function clearTextInput() {
+            documentText.value = '';
+            updateStats();
+            showToast('Document cleared.');
+        }
+
+        // File upload handling for Dropzone
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Drag & drop directly onto textarea
+        documentText.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            documentText.classList.add('dragover');
+        });
+        documentText.addEventListener('dragleave', () => documentText.classList.remove('dragover'));
+        documentText.addEventListener('drop', (e) => {
+            e.preventDefault();
+            documentText.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        async function handleFileUpload(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            showToast(`Uploading ${file.name}...`);
+
+            try {
+                const res = await fetch('/api/agent1/check', { // Route endpoint
+                    method: 'POST',
+                    body: formData
+                });
+                // Check if upload endpoint is needed
+            } catch (err) {}
+
+            try {
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    documentText.value = data.text;
+                    updateStats();
+                    document.getElementById('tabTextBtn').click();
+                    showToast(`Extracted ${data.word_count} words from ${data.filename}!`);
+                } else {
+                    showToast(data.error || 'Failed to upload document.');
+                }
+            } catch (err) {
+                showToast('Upload request failed: ' + err.message);
+            }
+        }
+
+        // RUN SENTINEL
+        runSentinelBtn.addEventListener('click', async () => {
+            const text = documentText.value.trim();
+            if (!text) {
+                showToast('Please enter or upload text to analyze.');
+                return;
+            }
+
+            runSentinelBtn.disabled = true;
+            sentinelSpinner.style.display = 'inline-block';
+            sentinelBtnText.textContent = 'Sentinel Auditing...';
+
+            try {
+                const response = await fetch('/api/agent1/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Audit failed');
+                }
+
+                currentSentinelReport = data;
+                renderSentinelResults(data, text);
+                showToast('Forensic Audit Complete!');
+            } catch (err) {
+                showToast('Analysis error: ' + err.message);
+            } finally {
+                runSentinelBtn.disabled = false;
+                sentinelSpinner.style.display = 'none';
+                sentinelBtnText.textContent = '🔍 Re-run Forensic Audit';
+            }
+        });
+
+        function renderSentinelResults(report, originalText) {
+            sentinelResults.style.display = 'flex';
+
+            const simScore = report.similarity_score !== undefined ? report.similarity_score : report.plagiarism_score;
+            const aiScore = report.ai_score;
+
+            // Pillar 1: Overall Similarity Score
+            document.getElementById('metricSimilarity').textContent = `${simScore}%`;
+            const simBadge = document.getElementById('badgeSimVerdict');
+            if (simScore < 15) {
+                simBadge.textContent = 'Low Similarity';
+                simBadge.style.background = 'var(--safe-bg)';
+                simBadge.style.color = 'var(--safe-color)';
+            } else if (simScore < 30) {
+                simBadge.textContent = 'Moderate Match';
+                simBadge.style.background = 'var(--ai-bg)';
+                simBadge.style.color = 'var(--ai-color)';
+            } else {
+                simBadge.textContent = 'High Overlap';
+                simBadge.style.background = 'var(--sim-bg)';
+                simBadge.style.color = 'var(--sim-color)';
+            }
+
+            // Pillar 2: AI-Generated Content Score
+            document.getElementById('metricAI').textContent = `${aiScore}%`;
+            const aiBadge = document.getElementById('badgeAIVerdict');
+            if (aiScore < 20) {
+                aiBadge.textContent = 'Likely Human';
+                aiBadge.style.background = 'var(--safe-bg)';
+                aiBadge.style.color = 'var(--safe-color)';
+            } else if (aiScore < 50) {
+                aiBadge.textContent = 'Mixed/Paraphrased';
+                aiBadge.style.background = 'var(--ai-bg)';
+                aiBadge.style.color = 'var(--ai-color)';
+            } else {
+                aiBadge.textContent = 'High AI Likelihood';
+                aiBadge.style.background = 'var(--sim-bg)';
+                aiBadge.style.color = 'var(--sim-color)';
+            }
+
+            // Pillar 3: Flags and Anomalies
+            const anomalies = report.flags_and_anomalies || [];
+            const flagsCountBadge = document.getElementById('flagsCountBadge');
+            const anomaliesList = document.getElementById('anomaliesList');
+            anomaliesList.innerHTML = '';
+
+            if (anomalies.length === 0) {
+                flagsCountBadge.textContent = '0 Flags Detected';
+                flagsCountBadge.style.background = 'var(--safe-bg)';
+                flagsCountBadge.style.color = 'var(--safe-color)';
+                anomaliesList.innerHTML = `
+                    <div style="font-size:0.78rem; color:var(--safe-color); font-weight:600; padding:6px 0;">
+                        ✓ Clean structure: No zero-width characters, homoglyphs, or unnatural tampering found.
+                    </div>`;
+            } else {
+                flagsCountBadge.textContent = `${anomalies.length} Flags Detected`;
+                flagsCountBadge.style.background = 'var(--flag-bg)';
+                flagsCountBadge.style.color = 'var(--flag-color)';
+
+                anomalies.forEach(a => {
+                    const item = document.createElement('div');
+                    item.className = 'anomaly-item';
+                    item.innerHTML = `
+                        <div class="anomaly-item-header">
+                            <span class="anomaly-name">${a.title}</span>
+                            <span class="anomaly-badge">${a.badge || a.category}</span>
+                        </div>
+                        <div class="anomaly-desc">${a.description}</div>
+                    `;
+                    anomaliesList.appendChild(item);
+                });
+            }
+
+            // Pillar 4: Source-Specific Match Breakdown
+            const sourcesList = document.getElementById('sourcesList');
+            sourcesList.innerHTML = '';
+            const sources = report.sources || [];
+            document.getElementById('sourceCountBadge').textContent = `${sources.length} sources identified`;
+
+            if (sources.length === 0) {
+                sourcesList.innerHTML = `<div style="font-size:0.78rem; color:var(--text-muted); padding:4px;">No direct web source duplicates detected.</div>`;
+            } else {
+                sources.forEach(s => {
+                    const pill = document.createElement('a');
+                    pill.className = 'source-pill';
+                    pill.href = s.url;
+                    pill.target = '_blank';
+                    const pct = s.match_percentage || 0;
+                    pill.innerHTML = `
+                        <div class="source-pill-row">
+                            <div class="source-name" title="${s.title}">${s.title || s.domain}</div>
+                            <div class="source-pct">${pct}% match</div>
+                        </div>
+                        <div class="source-bar-wrap">
+                            <div class="source-bar-fill" style="width: ${Math.min(100, pct)}%;"></div>
+                        </div>
+                    `;
+                    sourcesList.appendChild(pill);
+                });
+            }
+
+            // Render markup text
+            renderAnnotatedText(originalText, report.flagged_segments || []);
+        }
+
+        function renderAnnotatedText(text, flagged) {
+            const displayEl = document.getElementById('annotatedTextDisplay');
+            if (!flagged.length) {
+                displayEl.textContent = text;
+                return;
+            }
+
+            let html = '';
+            let lastIdx = 0;
+
+            flagged.forEach(item => {
+                if (item.start >= lastIdx && item.start < text.length) {
+                    html += escapeHtml(text.substring(lastIdx, item.start));
+                    const segText = escapeHtml(text.substring(item.start, item.end));
+                    const markClass = item.type === 'plagiarism' ? 'mark-plagiarism' : 'mark-ai';
+                    const titleTip = escapeHtml(item.reason || item.type);
+                    html += `<mark class="${markClass}" title="${titleTip}">${segText}</mark>`;
+                    lastIdx = item.end;
+                }
+            });
+
+            if (lastIdx < text.length) {
+                html += escapeHtml(text.substring(lastIdx));
+            }
+            displayEl.innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // RUN ARTISAN (THE HUMANIZER)
+        runArtisanBtn.addEventListener('click', async () => {
+            const text = documentText.value.trim();
+            if (!text) {
+                showToast('Please enter text to remediate.');
+                return;
+            }
+
+            runArtisanBtn.disabled = true;
+            artisanSpinner.style.display = 'inline-block';
+            artisanBtnText.textContent = 'Artisan Reconstructing...';
+
+            try {
+                const response = await fetch('/api/agent2/humanize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        agent1_report: currentSentinelReport
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Remediation failed');
+                }
+
+                renderArtisanResults(data);
+                showToast('Reconstruction & Verification Complete!');
+            } catch (err) {
+                showToast('Remediation error: ' + err.message);
+            } finally {
+                runArtisanBtn.disabled = false;
+                artisanSpinner.style.display = 'none';
+                artisanBtnText.textContent = '✨ Reconstruct with Artisan';
+            }
+        });
+
+        function renderArtisanResults(data) {
+            artisanPlaceholder.style.display = 'none';
+            artisanOutputDisplay.style.display = 'block';
+            artisanOutputDisplay.textContent = data.humanized_text;
+            lastHumanizedText = data.humanized_text;
+            copyResultBtn.style.display = 'inline-block';
+
+            // Score Delta Section
+            scoreDeltaSection.style.display = 'block';
+            const beforeSim = data.before_scores.similarity_score !== undefined ? data.before_scores.similarity_score : data.before_scores.plagiarism_score;
+            const afterSim = data.after_scores.similarity_score !== undefined ? data.after_scores.similarity_score : data.after_scores.plagiarism_score;
+
+            document.getElementById('deltaPlagOld').textContent = `${beforeSim}%`;
+            document.getElementById('deltaPlagNew').textContent = `${afterSim}%`;
+
+            document.getElementById('deltaAIOld').textContent = `${data.before_scores.ai_score}%`;
+            document.getElementById('deltaAINew').textContent = `${data.after_scores.ai_score}%`;
+
+            document.getElementById('deltaIntegrityOld').textContent = data.before_scores.integrity_score;
+            document.getElementById('deltaIntegrityNew').textContent = data.after_scores.integrity_score;
+
+            // Tells Eliminated & Changes
+            artisanDetailsSection.style.display = 'flex';
+            const eliminatedTellsList = document.getElementById('eliminatedTellsList');
+            eliminatedTellsList.innerHTML = '';
+            (data.tells_eliminated || []).forEach(t => {
+                const chip = document.createElement('span');
+                chip.className = 'tell-chip';
+                chip.textContent = `✓ Cut ${t}`;
+                eliminatedTellsList.appendChild(chip);
+            });
+
+            const changesList = document.getElementById('changesList');
+            changesList.innerHTML = '';
+            (data.changes_summary || []).forEach(c => {
+                const li = document.createElement('li');
+                li.textContent = c;
+                changesList.appendChild(li);
+            });
+        }
+
+        // Copy button
+        copyResultBtn.addEventListener('click', () => {
+            if (lastHumanizedText) {
+                navigator.clipboard.writeText(lastHumanizedText).then(() => {
+                    showToast('Copied clean reconstructed text to clipboard!');
+                });
+            }
+        });
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastMessage');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
