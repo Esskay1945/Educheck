@@ -1,109 +1,59 @@
-# EduCheck — Academic Integrity & Prose Reconstruction Studio
+# EduCheck
 
-EduCheck is an enterprise-grade academic integrity and prose reconstruction platform engineered for high-precision document forensics, multi-source web cross-referencing, and stylistic humanization.
+EduCheck checks a document for public-web text overlap and stylistic patterns. Sentinel reports matching passages and source coverage. Artisan edits for clarity, preserves recognized citations and bibliography text, and runs a fresh Sentinel check that includes previously matched sources.
 
----
+## Run locally
 
-## 🏛️ The Dual-Engine Architecture
+Use Python 3.10 or newer. Install Tesseract OCR and its language data for scanned PDFs. Install Antiword for binary Word DOC files. On Debian or Ubuntu, the system packages are:
 
-EduCheck operates on two tightly coordinated engines:
+~~~sh
+sudo apt-get install antiword tesseract-ocr tesseract-ocr-eng
+~~~
 
-### 1. 🛡️ Sentinel — Forensic Detection Engine
-Sentinel provides forensic-level academic inspection across four core industry pillars:
-- **Overall Similarity Score (%)**: Computes aggregate verbatim and rolling n-gram text overlap against live web indexes and encyclopedic repositories.
-- **Source-Specific Match Percentage (%)**: Attributes specific matching segments and ratios to individual web sources with live URL citations.
-- **AI-Generated Content Likelihood (%)**: Forensic evaluation of syntactic perplexity, rhythm burstiness, and machine-learning generation hallmarks.
-- **Flags & Anomalies Scanner**: Detects adversarial evasion tactics, including:
-  - Invisible / zero-width characters (`\u200b`, `\u200c`, `\u200d`, BOM `\ufeff`, soft hyphens)
-  - Mixed-script homoglyphs (Cyrillic or Greek substitutions masquerading as Latin characters)
-  - Cadence uniformity and robotic sentence run-ons (>70 words)
-  - Web DOM copy-paste artifacts (non-breaking whitespace clusters)
+~~~sh
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python app.py
+~~~
 
-### 2. ✍️ Artisan — Prose Reconstruction & Humanizer
-Artisan reconstructs flagged prose to bypass synthetic cadence while preserving academic rigor:
-- **Variable Burstiness & Cadence Modulation**: Injects natural human variation in clause length and syntactic rhythm.
-- **Semantic Fidelity Preservation**: Retains citations, technical terminology, and core academic arguments.
-- **Instant Forensic Verification**: Automatically triggers a secondary Sentinel audit on humanized output to verify reduced AI markers and zero unintended plagiarism.
+Open [EduCheck locally](http://127.0.0.1:5000).
 
----
+Set `AI_PROVIDER` and the matching key in `.env` to enable provider-based style assessment and editing.
 
-## 🚀 Key Features
+| Provider | Key | Optional model override | Default model |
+| --- | --- | --- | --- |
+| Groq | GROQ_API_KEY | GROQ_MODEL | openai/gpt-oss-120b |
+| xAI | XAI_API_KEY | XAI_MODEL | grok-4.3 |
+| OpenAI | OPENAI_API_KEY | OPENAI_MODEL | gpt-4.1-mini |
 
-- **Multi-Format Document Parsing**: Native extraction for `.pdf`, `.docx`, `.doc`, `.txt`, `.rtf`, `.odt`, and `.html`.
-- **Live Stealth Web Indexing**: High-speed, multi-threaded search across encyclopedic databases and web indexes with automated citation noise decomposition.
-- **Interactive Segment Inspector**: Color-coded inline markup for both plagiarism (red) and AI-generated cadence (orange).
-- **Curated Academic UI**: Premium maroon-and-white aesthetic designed for academic institutions, researchers, and editorial workflows.
+`AI_MODEL` is a shared override. If `AI_PROVIDER` is unset, EduCheck checks the provider-specific keys in the order listed. Existing `GROK_API_KEY` values are also supported. Keys starting with `gsk_` use Groq. Other legacy keys use xAI. Without a configured provider, Sentinel uses local style checks and Artisan retains the original text. The workspace and `/api/status` show which provider is configured. Actual connectivity and model entitlement are exercised when a document is processed.
 
----
+## Documents and search results
 
-## 🛠️ Quickstart & Installation
+The workspace accepts PDF, DOCX, DOC, ODT, RTF, TXT, Markdown, HTML, TEX, CSV, JSON, XML, and LOG. Uploads are limited to 32 MiB and 60,000 extracted characters. PDFs can contain up to 120 pages, including at most 20 pages that need OCR. Set `EDUCHECK_OCR_LANG` to an installed Tesseract language code for documents in other languages. Review extracted text before checking a scan.
 
-### Prerequisites
-- Python 3.10 or higher
-- An API Key (Groq or xAI Grok)
+Similarity measures the share of document words covered by five-word matches in the public pages reached. Search samples up to 16 excerpts across the document and checks up to 32 distinct candidate pages, including up to eight prior matches during rewrite verification. Partial coverage and service failures appear in the report. A low overlap score covers the pages reached and cannot establish originality outside that search. Use source links to review overlap and attribution. Use independent evidence for any authorship or misconduct decision.
 
-### Setup Instructions
+Uploads are extracted in temporary files and removed after processing. Running a check sends short excerpts to DuckDuckGo and Wikipedia. A configured AI provider receives the text for style assessment and editing. Verification sends excerpts and, if configured, text from the edited version.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Esskay1945/Educheck.git
-   cd Educheck
-   ```
+## Deploy
 
-2. **Create and activate a virtual environment:**
-   ```bash
-   python -m venv venv
-   # Windows:
-   .\venv\Scripts\activate
-   # macOS/Linux:
-   source venv/bin/activate
-   ```
+The Procfile serves the app with Gunicorn and requires `EDUCHECK_ACCESS_TOKEN`. Set a long, random token in the host environment and use it as the password at the browser prompt. The username can be any nonempty value. Serve the workspace over HTTPS. Set a stable `EDUCHECK_SECRET_KEY` if audit tokens should survive restarts or work across instances.
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+Use the Dockerfile to include Antiword and English Tesseract OCR in the runtime.
 
-4. **Configure environment variables:**
-   Copy the example environment file and add your API key:
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env`:
-   ```ini
-   GROK_API_KEY=gsk_your_key_here
-   ```
+~~~sh
+docker build -t educheck .
+docker run --rm -p 127.0.0.1:8000:8000 --env-file .env educheck
+~~~
 
-5. **Start the EduCheck server:**
-   ```bash
-   python app.py
-   ```
-   Open your browser and navigate to `http://127.0.0.1:5000`.
+For a hosted deployment, point health checks at `/healthz`. The SQLite rate limiter is shared by workers on one instance. Set `EDUCHECK_RATE_DB` to a writable local path if needed. For multiple replicas, enforce the deployment-wide limit at the ingress. Set `EDUCHECK_PROXY_HOPS` only when the server is reachable exclusively through the configured number of trusted proxies. Run live search and provider checks with an approved sample document after deploying.
 
----
+## Test
 
-## 📁 Repository Structure
-
-```
-Educheck/
-├── app.py                      # Flask application and REST API endpoints
-├── requirements.txt            # Project dependencies
-├── .env.example                # Sample environment configuration template
-├── .gitignore                  # Git ignore rules (secrets, venvs, caches)
-├── engine/
-│   ├── __init__.py
-│   ├── agent1_checker.py       # Sentinel: Plagiarism, anomaly & web search engine
-│   ├── agent2_humanizer.py     # Artisan: Prose reconstruction & humanizer engine
-│   ├── document_parser.py      # Multi-format document parser (PDF, DOCX, TXT)
-│   └── grok_client.py          # Unified LLM provider client (Groq / xAI)
-├── templates/
-│   └── index.html              # Sleek academic interface (HTML5 / Vanilla CSS / JS)
-└── uploads/                    # Secure local staging directory for file uploads
-```
-
----
-
-## 🔒 Security & Privacy
-
-- Document uploads are processed locally and staged securely.
-- No confidential API keys are ever tracked or committed to version control.
+~~~sh
+pip install -r requirements-dev.txt
+python -m pytest -q
+~~~

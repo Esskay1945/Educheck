@@ -36,3 +36,6 @@ humanizer/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Flask's local rate limit database
+instance/
