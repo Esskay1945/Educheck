@@ -692,6 +692,10 @@
         }
 
         /* Source-Specific Match List */
+        .details-section[hidden] {
+            display: none;
+        }
+
         .details-section {
             display: flex;
             flex-direction: column;
@@ -846,7 +850,7 @@
         }
 
         .delta-new {
-            color: var(--safe-color);
+            color: var(--text-primary);
         }
 
         .delta-arrow {
@@ -927,7 +931,7 @@
         <div class="header-actions">
             <div class="status-pill">
                 <div class="status-dot"></div>
-                <span>Forensic Engine Online</span>
+                <span>{{ provider | upper ~ " configured" if provider else "Local style checks" }}</span>
             </div>
         </div>
     </header>
@@ -938,15 +942,15 @@
         <!-- Hero Flow Visualizer -->
         <section class="hero-banner">
             <div class="hero-title">
-                <h2>Autonomous Plagiarism Check & Humanization</h2>
-                <p>Sentinel audits multi-source similarity, AI cadence, and hidden tampering; Artisan reconstructs prose into authentic human style.</p>
+                <h2>Web Similarity & Prose Editing</h2>
+                <p>Sentinel checks for overlap with public web pages and highlights stylistic patterns. Artisan edits prose and scans the edited text again.</p>
             </div>
             <div class="duo-flow">
                 <div class="engine-chip">
                     <div class="engine-chip-icon">S</div>
                     <div>
                         <div class="engine-chip-name">Sentinel</div>
-                        <div class="engine-chip-desc">Similarity, AI & Anomaly Audit</div>
+                        <div class="engine-chip-desc">Similarity, Style & Formatting</div>
                     </div>
                 </div>
                 <div class="flow-arrow">➔</div>
@@ -954,7 +958,7 @@
                     <div class="engine-chip-icon remedy">A</div>
                     <div>
                         <div class="engine-chip-name">Artisan</div>
-                        <div class="engine-chip-desc">Autonomous Style Remediation</div>
+                        <div class="engine-chip-desc">Editing & Verification</div>
                     </div>
                 </div>
             </div>
@@ -970,11 +974,11 @@
                         <span class="panel-badge">SENTINEL</span>
                         <div>
                             <div class="panel-title">Forensic Detection Engine</div>
-                            <div class="panel-sub">Multi-source web similarity, AI content scoring & anomaly inspection</div>
+                            <div class="panel-sub">Web overlap, style signals and formatting observations</div>
                         </div>
                     </div>
                     <div>
-                        <button class="btn-ghost" onclick="clearTextInput()">Clear</button>
+                        <button class="btn-ghost" id="clearTextBtn" type="button">Clear</button>
                     </div>
                 </div>
 
@@ -982,24 +986,24 @@
                     <!-- Tab Switcher -->
                     <div class="tab-switcher">
                         <button class="tab-btn active" id="tabTextBtn">Direct Text Input</button>
-                        <button class="tab-btn" id="tabUploadBtn">Upload Any Document</button>
+                        <button class="tab-btn" id="tabUploadBtn">Upload Document</button>
                     </div>
 
                     <!-- Direct Text Box -->
                     <div id="textInputContainer" class="text-input-wrap">
-                        <textarea id="documentText" placeholder="Paste your essay, paper, or research text here to audit for similarity, AI generation, and structural anomalies..."></textarea>
+                        <textarea id="documentText" maxlength="{{ max_length }}" aria-label="Document text" placeholder="Paste your essay, paper, or research text here."></textarea>
                         <div class="text-stats-bar">
                             <span id="wordCountLabel">0 words | 0 characters</span>
-                            <span style="cursor:pointer; color:var(--maroon-600); font-weight:600;" onclick="clearTextInput()">Clear text</span>
+                            <span>Up to {{ "{:,}".format(max_length) }} characters</span>
                         </div>
                     </div>
 
                     <!-- Universal Document Upload Box -->
                     <div id="uploadContainer" style="display: none;">
-                        <div class="upload-dropzone" id="dropzone">
+                        <div class="upload-dropzone" id="dropzone" role="button" tabindex="0">
                             <div class="upload-icon">📂</div>
-                            <div class="upload-label">Click or drop any document to upload</div>
-                            <div class="upload-hint">Supports all document types: PDF, Word (DOCX/DOC), Text, Markdown, RTF, HTML, ODT, CSV, etc.</div>
+                            <div class="upload-label">Choose a document or drop it here</div>
+                            <div class="upload-hint">PDF (including scans), DOCX, DOC, ODT, RTF, TXT, Markdown, HTML, TEX, CSV, JSON, XML and LOG.</div>
                             <div class="supported-tags">
                                 <span class="format-badge">.PDF</span>
                                 <span class="format-badge">.DOCX</span>
@@ -1010,9 +1014,16 @@
                                 <span class="format-badge">.HTML</span>
                                 <span class="format-badge">.ODT</span>
                             </div>
-                            <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt,.md,.rtf,.odt,.html,.htm,.csv,.json,.tex,text/*,*/*" style="display: none;">
+                            <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt,.md,.rtf,.odt,.html,.htm,.csv,.json,.tex,.xml,.log" style="display: none;">
                         </div>
                     </div>
+
+
+                    <p class="metric-sub" id="privacyDisclosure">
+                        Uploads are extracted on this server. Running a check sends short text excerpts to DuckDuckGo
+                        and Wikipedia. If an AI provider is configured, it receives the document for style analysis and editing.
+                        An Artisan verification also checks the edited text.
+                    </p>
 
                     <!-- Submit Button for Sentinel -->
                     <button class="btn-primary" id="runSentinelBtn">
@@ -1032,19 +1043,21 @@
                                     <span class="metric-badge badge-sim" id="badgeSimVerdict">Evaluating</span>
                                 </div>
                                 <div class="metric-value sim" id="metricSimilarity">--%</div>
-                                <div class="metric-sub">Total overlapping text matching web pages, published works & documents.</div>
+                                <div class="metric-sub">Share of document words matched on public web pages checked.</div>
                             </div>
 
                             <!-- AI-Generated Content Score -->
                             <div class="metric-card">
                                 <div class="metric-card-top">
-                                    <div class="metric-title">AI-Generated Content</div>
+                                    <div class="metric-title">AI Style Signals</div>
                                     <span class="metric-badge badge-ai" id="badgeAIVerdict">Evaluating</span>
                                 </div>
                                 <div class="metric-value ai" id="metricAI">--%</div>
-                                <div class="metric-sub">Proportion of text showing synthetic cadence, low burstiness & stock AI syntax.</div>
+                                <div class="metric-sub">An uncertain style assessment. Use independent evidence for authorship or misconduct decisions.</div>
                             </div>
                         </div>
+
+                        <p class="metric-sub" id="auditCoverage" role="status"></p>
 
                         <!-- 3: Flags and Anomalies -->
                         <div class="flags-card" id="flagsContainer">
@@ -1063,7 +1076,7 @@
                                 <span>Diagnostic Document Markup</span>
                                 <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">
                                     <span style="color: var(--sim-color);">■ Red = Similar Web Text</span> | 
-                                    <span style="color: var(--ai-color);">■ Orange = AI Cadence</span>
+                                    <span style="color: var(--ai-color);">■ Orange = Style Signal</span>
                                 </span>
                             </div>
                             <div class="annotated-text-panel" id="annotatedTextDisplay"></div>
@@ -1089,23 +1102,23 @@
                         <span class="panel-badge badge-artisan">ARTISAN</span>
                         <div>
                             <div class="panel-title">Prose Reconstruction Studio</div>
-                            <div class="panel-sub">Remediates similarity, strips AI tells, and cleans anomalies</div>
+                            <div class="panel-sub">Edits for clarity and rechecks web similarity</div>
                         </div>
                     </div>
                     <div>
-                        <button class="btn-ghost" id="copyResultBtn" style="display: none;">📋 Copy Clean Text</button>
+                        <button class="btn-ghost" id="copyResultBtn" style="display: none;">📋 Copy Edited Text</button>
                     </div>
                 </div>
 
                 <div class="panel-body">
                     <!-- Solve Banner -->
                     <div style="background: var(--bg-surface-subtle); padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-light); font-size: 0.82rem; color: var(--text-secondary);">
-                        Artisan consumes Sentinel's forensic report, rewrites matched phrases into original prose, eliminates robotic cadence, cleans hidden characters, and performs a verification pass.
+                        Artisan preserves recognized citations, edits for clarity, and runs a fresh Sentinel check. Review source links and attribution before using the edit.
                     </div>
 
                     <!-- Run Artisan Button -->
                     <button class="btn-accent" id="runArtisanBtn">
-                        <span id="artisanBtnText">✨ Reconstruct with Artisan (Humanizer)</span>
+                        <span id="artisanBtnText">✨ Edit with Artisan</span>
                         <div class="spinner" id="artisanSpinner" style="display: none;"></div>
                     </button>
 
@@ -1121,41 +1134,35 @@
                                 </div>
                             </div>
                             <div class="delta-item">
-                                <div class="delta-title">AI Content</div>
+                                <div class="delta-title">AI Style Signals</div>
                                 <div class="delta-flow">
                                     <span class="delta-old" id="deltaAIOld">--%</span>
                                     <span class="delta-arrow">➔</span>
                                     <span class="delta-new" id="deltaAINew">--%</span>
                                 </div>
                             </div>
-                            <div class="delta-item">
-                                <div class="delta-title">Integrity Score</div>
-                                <div class="delta-flow">
-                                    <span class="delta-old" id="deltaIntegrityOld">--</span>
-                                    <span class="delta-arrow">➔</span>
-                                    <span class="delta-new" id="deltaIntegrityNew">--</span>
-                                </div>
-                            </div>
                         </div>
+                    </div>
+
+                    <p class="metric-sub" id="verificationStatus" role="status" hidden></p>
+                    <div id="verificationSources" class="details-section" hidden>
+                        <div class="details-title">Sources matched in the edited text</div>
+                        <div class="source-pill-list" id="verificationSourcesList"></div>
                     </div>
 
                     <!-- Output Box / Placeholder -->
                     <div>
-                        <div class="details-title" style="margin-bottom: 6px;">Remediated Humanized Document</div>
+                        <div class="details-title" style="margin-bottom: 6px;">Edited Document</div>
                         <div id="artisanPlaceholder" class="empty-placeholder">
                             <div class="placeholder-icon">🛡️</div>
-                            <div style="font-weight: 700; color: var(--maroon-900);">Awaiting Sentinel Audit</div>
-                            <div style="font-size: 0.8rem; margin-top: 4px;">Run Sentinel first or click Reconstruct to let Artisan rewrite matches and eliminate AI tells.</div>
+                            <div style="font-weight: 700; color: var(--maroon-900);">Ready to edit</div>
+                            <div style="font-size: 0.8rem; margin-top: 4px;">Add text in Sentinel and select Edit with Artisan.</div>
                         </div>
                         <div id="artisanOutputDisplay" class="remedy-output-panel" style="display: none;"></div>
                     </div>
 
                     <!-- Changes Summary & Tells Eliminated -->
                     <div id="artisanDetailsSection" style="display: none; flex-direction: column; gap: 12px;">
-                        <div class="details-section">
-                            <div class="details-title">Structural Tells & Flags Eliminated</div>
-                            <div class="tell-chip-wrap" id="eliminatedTellsList"></div>
-                        </div>
                         <div class="details-section">
                             <div class="details-title">Transformation Log</div>
                             <ul id="changesList" style="font-size: 0.8rem; color: var(--text-secondary); padding-left: 18px; line-height: 1.6;"></ul>
@@ -1169,406 +1176,8 @@
     </main>
 
     <!-- Toast Notification -->
-    <div class="toast" id="toastMessage"></div>
+    <div class="toast" id="toastMessage" role="status"></div>
 
-    <script>
-        let currentSentinelReport = null;
-        let lastHumanizedText = "";
-
-        // DOM elements
-        const documentText = document.getElementById('documentText');
-        const wordCountLabel = document.getElementById('wordCountLabel');
-
-        const runSentinelBtn = document.getElementById('runSentinelBtn');
-        const sentinelBtnText = document.getElementById('sentinelBtnText');
-        const sentinelSpinner = document.getElementById('sentinelSpinner');
-        const sentinelResults = document.getElementById('sentinelResults');
-
-        const runArtisanBtn = document.getElementById('runArtisanBtn');
-        const artisanBtnText = document.getElementById('artisanBtnText');
-        const artisanSpinner = document.getElementById('artisanSpinner');
-        const artisanPlaceholder = document.getElementById('artisanPlaceholder');
-        const artisanOutputDisplay = document.getElementById('artisanOutputDisplay');
-        const copyResultBtn = document.getElementById('copyResultBtn');
-
-        const scoreDeltaSection = document.getElementById('scoreDeltaSection');
-        const artisanDetailsSection = document.getElementById('artisanDetailsSection');
-        const dropzone = document.getElementById('dropzone');
-        const fileInput = document.getElementById('fileInput');
-
-        // Tabs
-        document.getElementById('tabTextBtn').addEventListener('click', (e) => {
-            e.target.classList.add('active');
-            document.getElementById('tabUploadBtn').classList.remove('active');
-            document.getElementById('textInputContainer').style.display = 'block';
-            document.getElementById('uploadContainer').style.display = 'none';
-        });
-
-        document.getElementById('tabUploadBtn').addEventListener('click', (e) => {
-            e.target.classList.add('active');
-            document.getElementById('tabTextBtn').classList.remove('active');
-            document.getElementById('textInputContainer').style.display = 'none';
-            document.getElementById('uploadContainer').style.display = 'block';
-        });
-
-        // Text input stats
-        documentText.addEventListener('input', () => {
-            updateStats();
-        });
-
-        function updateStats() {
-            const val = documentText.value.trim();
-            const words = val ? val.split(/\s+/).length : 0;
-            const chars = val.length;
-            wordCountLabel.textContent = `${words} words | ${chars} characters`;
-        }
-
-        function clearTextInput() {
-            documentText.value = '';
-            updateStats();
-            showToast('Document cleared.');
-        }
-
-        // File upload handling for Dropzone
-        dropzone.addEventListener('click', () => fileInput.click());
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.classList.add('dragover');
-        });
-        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.classList.remove('dragover');
-            if (e.dataTransfer.files.length) {
-                handleFileUpload(e.dataTransfer.files[0]);
-            }
-        });
-
-        // Drag & drop directly onto textarea
-        documentText.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            documentText.classList.add('dragover');
-        });
-        documentText.addEventListener('dragleave', () => documentText.classList.remove('dragover'));
-        documentText.addEventListener('drop', (e) => {
-            e.preventDefault();
-            documentText.classList.remove('dragover');
-            if (e.dataTransfer.files.length) {
-                handleFileUpload(e.dataTransfer.files[0]);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) {
-                handleFileUpload(e.target.files[0]);
-            }
-        });
-
-        async function handleFileUpload(file) {
-            const formData = new FormData();
-            formData.append('file', file);
-            showToast(`Uploading ${file.name}...`);
-
-            try {
-                const res = await fetch('/api/agent1/check', { // Route endpoint
-                    method: 'POST',
-                    body: formData
-                });
-                // Check if upload endpoint is needed
-            } catch (err) {}
-
-            try {
-                const res = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    documentText.value = data.text;
-                    updateStats();
-                    document.getElementById('tabTextBtn').click();
-                    showToast(`Extracted ${data.word_count} words from ${data.filename}!`);
-                } else {
-                    showToast(data.error || 'Failed to upload document.');
-                }
-            } catch (err) {
-                showToast('Upload request failed: ' + err.message);
-            }
-        }
-
-        // RUN SENTINEL
-        runSentinelBtn.addEventListener('click', async () => {
-            const text = documentText.value.trim();
-            if (!text) {
-                showToast('Please enter or upload text to analyze.');
-                return;
-            }
-
-            runSentinelBtn.disabled = true;
-            sentinelSpinner.style.display = 'inline-block';
-            sentinelBtnText.textContent = 'Sentinel Auditing...';
-
-            try {
-                const response = await fetch('/api/agent1/check', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text })
-                });
-
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.error || 'Audit failed');
-                }
-
-                currentSentinelReport = data;
-                renderSentinelResults(data, text);
-                showToast('Forensic Audit Complete!');
-            } catch (err) {
-                showToast('Analysis error: ' + err.message);
-            } finally {
-                runSentinelBtn.disabled = false;
-                sentinelSpinner.style.display = 'none';
-                sentinelBtnText.textContent = '🔍 Re-run Forensic Audit';
-            }
-        });
-
-        function renderSentinelResults(report, originalText) {
-            sentinelResults.style.display = 'flex';
-
-            const simScore = report.similarity_score !== undefined ? report.similarity_score : report.plagiarism_score;
-            const aiScore = report.ai_score;
-
-            // Pillar 1: Overall Similarity Score
-            document.getElementById('metricSimilarity').textContent = `${simScore}%`;
-            const simBadge = document.getElementById('badgeSimVerdict');
-            if (simScore < 15) {
-                simBadge.textContent = 'Low Similarity';
-                simBadge.style.background = 'var(--safe-bg)';
-                simBadge.style.color = 'var(--safe-color)';
-            } else if (simScore < 30) {
-                simBadge.textContent = 'Moderate Match';
-                simBadge.style.background = 'var(--ai-bg)';
-                simBadge.style.color = 'var(--ai-color)';
-            } else {
-                simBadge.textContent = 'High Overlap';
-                simBadge.style.background = 'var(--sim-bg)';
-                simBadge.style.color = 'var(--sim-color)';
-            }
-
-            // Pillar 2: AI-Generated Content Score
-            document.getElementById('metricAI').textContent = `${aiScore}%`;
-            const aiBadge = document.getElementById('badgeAIVerdict');
-            if (aiScore < 20) {
-                aiBadge.textContent = 'Likely Human';
-                aiBadge.style.background = 'var(--safe-bg)';
-                aiBadge.style.color = 'var(--safe-color)';
-            } else if (aiScore < 50) {
-                aiBadge.textContent = 'Mixed/Paraphrased';
-                aiBadge.style.background = 'var(--ai-bg)';
-                aiBadge.style.color = 'var(--ai-color)';
-            } else {
-                aiBadge.textContent = 'High AI Likelihood';
-                aiBadge.style.background = 'var(--sim-bg)';
-                aiBadge.style.color = 'var(--sim-color)';
-            }
-
-            // Pillar 3: Flags and Anomalies
-            const anomalies = report.flags_and_anomalies || [];
-            const flagsCountBadge = document.getElementById('flagsCountBadge');
-            const anomaliesList = document.getElementById('anomaliesList');
-            anomaliesList.innerHTML = '';
-
-            if (anomalies.length === 0) {
-                flagsCountBadge.textContent = '0 Flags Detected';
-                flagsCountBadge.style.background = 'var(--safe-bg)';
-                flagsCountBadge.style.color = 'var(--safe-color)';
-                anomaliesList.innerHTML = `
-                    <div style="font-size:0.78rem; color:var(--safe-color); font-weight:600; padding:6px 0;">
-                        ✓ Clean structure: No zero-width characters, homoglyphs, or unnatural tampering found.
-                    </div>`;
-            } else {
-                flagsCountBadge.textContent = `${anomalies.length} Flags Detected`;
-                flagsCountBadge.style.background = 'var(--flag-bg)';
-                flagsCountBadge.style.color = 'var(--flag-color)';
-
-                anomalies.forEach(a => {
-                    const item = document.createElement('div');
-                    item.className = 'anomaly-item';
-                    item.innerHTML = `
-                        <div class="anomaly-item-header">
-                            <span class="anomaly-name">${a.title}</span>
-                            <span class="anomaly-badge">${a.badge || a.category}</span>
-                        </div>
-                        <div class="anomaly-desc">${a.description}</div>
-                    `;
-                    anomaliesList.appendChild(item);
-                });
-            }
-
-            // Pillar 4: Source-Specific Match Breakdown
-            const sourcesList = document.getElementById('sourcesList');
-            sourcesList.innerHTML = '';
-            const sources = report.sources || [];
-            document.getElementById('sourceCountBadge').textContent = `${sources.length} sources identified`;
-
-            if (sources.length === 0) {
-                sourcesList.innerHTML = `<div style="font-size:0.78rem; color:var(--text-muted); padding:4px;">No direct web source duplicates detected.</div>`;
-            } else {
-                sources.forEach(s => {
-                    const pill = document.createElement('a');
-                    pill.className = 'source-pill';
-                    pill.href = s.url;
-                    pill.target = '_blank';
-                    const pct = s.match_percentage || 0;
-                    pill.innerHTML = `
-                        <div class="source-pill-row">
-                            <div class="source-name" title="${s.title}">${s.title || s.domain}</div>
-                            <div class="source-pct">${pct}% match</div>
-                        </div>
-                        <div class="source-bar-wrap">
-                            <div class="source-bar-fill" style="width: ${Math.min(100, pct)}%;"></div>
-                        </div>
-                    `;
-                    sourcesList.appendChild(pill);
-                });
-            }
-
-            // Render markup text
-            renderAnnotatedText(originalText, report.flagged_segments || []);
-        }
-
-        function renderAnnotatedText(text, flagged) {
-            const displayEl = document.getElementById('annotatedTextDisplay');
-            if (!flagged.length) {
-                displayEl.textContent = text;
-                return;
-            }
-
-            let html = '';
-            let lastIdx = 0;
-
-            flagged.forEach(item => {
-                if (item.start >= lastIdx && item.start < text.length) {
-                    html += escapeHtml(text.substring(lastIdx, item.start));
-                    const segText = escapeHtml(text.substring(item.start, item.end));
-                    const markClass = item.type === 'plagiarism' ? 'mark-plagiarism' : 'mark-ai';
-                    const titleTip = escapeHtml(item.reason || item.type);
-                    html += `<mark class="${markClass}" title="${titleTip}">${segText}</mark>`;
-                    lastIdx = item.end;
-                }
-            });
-
-            if (lastIdx < text.length) {
-                html += escapeHtml(text.substring(lastIdx));
-            }
-            displayEl.innerHTML = html;
-        }
-
-        function escapeHtml(str) {
-            return str
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-        // RUN ARTISAN (THE HUMANIZER)
-        runArtisanBtn.addEventListener('click', async () => {
-            const text = documentText.value.trim();
-            if (!text) {
-                showToast('Please enter text to remediate.');
-                return;
-            }
-
-            runArtisanBtn.disabled = true;
-            artisanSpinner.style.display = 'inline-block';
-            artisanBtnText.textContent = 'Artisan Reconstructing...';
-
-            try {
-                const response = await fetch('/api/agent2/humanize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: text,
-                        agent1_report: currentSentinelReport
-                    })
-                });
-
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.error || 'Remediation failed');
-                }
-
-                renderArtisanResults(data);
-                showToast('Reconstruction & Verification Complete!');
-            } catch (err) {
-                showToast('Remediation error: ' + err.message);
-            } finally {
-                runArtisanBtn.disabled = false;
-                artisanSpinner.style.display = 'none';
-                artisanBtnText.textContent = '✨ Reconstruct with Artisan';
-            }
-        });
-
-        function renderArtisanResults(data) {
-            artisanPlaceholder.style.display = 'none';
-            artisanOutputDisplay.style.display = 'block';
-            artisanOutputDisplay.textContent = data.humanized_text;
-            lastHumanizedText = data.humanized_text;
-            copyResultBtn.style.display = 'inline-block';
-
-            // Score Delta Section
-            scoreDeltaSection.style.display = 'block';
-            const beforeSim = data.before_scores.similarity_score !== undefined ? data.before_scores.similarity_score : data.before_scores.plagiarism_score;
-            const afterSim = data.after_scores.similarity_score !== undefined ? data.after_scores.similarity_score : data.after_scores.plagiarism_score;
-
-            document.getElementById('deltaPlagOld').textContent = `${beforeSim}%`;
-            document.getElementById('deltaPlagNew').textContent = `${afterSim}%`;
-
-            document.getElementById('deltaAIOld').textContent = `${data.before_scores.ai_score}%`;
-            document.getElementById('deltaAINew').textContent = `${data.after_scores.ai_score}%`;
-
-            document.getElementById('deltaIntegrityOld').textContent = data.before_scores.integrity_score;
-            document.getElementById('deltaIntegrityNew').textContent = data.after_scores.integrity_score;
-
-            // Tells Eliminated & Changes
-            artisanDetailsSection.style.display = 'flex';
-            const eliminatedTellsList = document.getElementById('eliminatedTellsList');
-            eliminatedTellsList.innerHTML = '';
-            (data.tells_eliminated || []).forEach(t => {
-                const chip = document.createElement('span');
-                chip.className = 'tell-chip';
-                chip.textContent = `✓ Cut ${t}`;
-                eliminatedTellsList.appendChild(chip);
-            });
-
-            const changesList = document.getElementById('changesList');
-            changesList.innerHTML = '';
-            (data.changes_summary || []).forEach(c => {
-                const li = document.createElement('li');
-                li.textContent = c;
-                changesList.appendChild(li);
-            });
-        }
-
-        // Copy button
-        copyResultBtn.addEventListener('click', () => {
-            if (lastHumanizedText) {
-                navigator.clipboard.writeText(lastHumanizedText).then(() => {
-                    showToast('Copied clean reconstructed text to clipboard!');
-                });
-            }
-        });
-
-        function showToast(msg) {
-            const toast = document.getElementById('toastMessage');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3500);
-        }
-    </script>
+    <script src="{{ url_for('static', filename='educheck.js') }}" defer></script>
 </body>
 </html>

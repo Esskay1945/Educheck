@@ -1,0 +1,38 @@
+name: EduCheck tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - run: sudo apt-get update && sudo apt-get install -y antiword tesseract-ocr tesseract-ocr-eng
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest -q
+      - run: node --check static/educheck.js
+      - run: gunicorn --check-config --preload app:app
+      - name: Build and start the deployment image
+        run: |
+          docker build --tag educheck-ci .
+          docker run --detach --name educheck-ci \
+            --env EDUCHECK_ACCESS_TOKEN=ci-workspace-password \
+            --publish 127.0.0.1:8000:8000 educheck-ci
+          trap 'docker logs educheck-ci; docker rm --force educheck-ci' EXIT
+          curl --fail --silent --show-error --retry 8 --retry-delay 1 --retry-all-errors http://127.0.0.1:8000/healthz
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8000/api/status)" = 401
+          curl --fail --silent --show-error --user educheck:ci-workspace-password http://127.0.0.1:8000/api/status
+          docker exec educheck-ci sh -c 'command -v antiword && tesseract --list-langs'

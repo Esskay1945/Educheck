@@ -1,92 +1,132 @@
+"""Citation-preserving editing and independent verification."""
+
+import re
 import time
-from typing import Dict, Any, List, Optional
-from engine.grok_client import GrokClient
-from engine.agent1_checker import Agent1Checker
+from concurrent.futures import ThreadPoolExecutor
+
+from engine.document_parser import MAX_TEXT_LENGTH
+from engine.grok_client import split_text
+
+REFERENCE_HEADING = re.compile(
+    r"(?im)^[ \t]*(?:#{1,6}[ \t]*)?(?:references|bibliography|works cited|sources|notes)[ \t]*:?[ \t]*$"
+)
+PROTECTED = re.compile(
+    r"(?im)^\s*\[?\d+[.)\]]\s+[^\n]+(?=\n|$)"  # Numbered reference and list entries
+    r"|!?\[[^\]\n]+\]\([^\n)]+\)"  # Markdown links
+    r"|https?://[^\s<>\"”]+|(?:doi:\s*)?10\.\d{4,9}/[^\s<>\"”]+"
+    r"|\[\s*\d+(?:\s*[,;–-]\s*\d+)*\s*\]|\[\s*[a-z][a-z0-9_-]*\s*\]"
+    r"|\([^()\n]{0,130}\b(?:18|19|20)\d{2}[a-z]?(?:[^()\n]{0,70})\)"
+    r"|“[^”\n]+”|(?<!\w)\"[^\"\n]+\"|[⁰¹²³⁴⁵⁶⁷⁸⁹]+"
+    r"|\b\d+(?:[.,]\d+)*(?:%|\b)"
+)
+PLACEHOLDER = re.compile(r"\[\[EDUCHECK_KEEP_\d+_\d+\]\]")
+SCORE_KEYS = ("similarity_score", "plagiarism_score", "ai_score", "integrity_score")
+
+
+def audit_summary(report):
+    return {
+        **{key: report[key] for key in SCORE_KEYS},
+        "similarity_coverage": report["similarity_coverage"],
+        "ai_method": report["ai_analysis"]["method"],
+        "ai_warning": report["ai_analysis"]["warning"],
+    }
+
+
+def baseline_sources(report):
+    return [
+        {"url": source["url"], "domain": source["domain"], "title": source["title"][:200]}
+        for source in report["sources"][:8]
+    ]
+
+
+def preserve_citations(chunk, index):
+    originals = {}
+
+    def replace(match):
+        token = f"[[EDUCHECK_KEEP_{index}_{len(originals)}]]"
+        originals[token] = match.group()
+        return token
+
+    return PROTECTED.sub(replace, chunk), originals
+
+
+def edit_section(client, index, chunk):
+    leading = chunk[:len(chunk) - len(chunk.lstrip())]
+    trailing = chunk[len(chunk.rstrip()):]
+    passage = chunk.strip()
+    if not passage:
+        return chunk, [], False
+
+    if PLACEHOLDER.search(passage):
+        return chunk, [], True
+    masked, originals = preserve_citations(passage, index)
+    result = client.edit_chunk(masked)
+    if result is None:
+        return chunk, [], True
+    edited = result.humanized_text.strip()
+    if PLACEHOLDER.findall(edited) != list(originals) or len(edited) < len(masked) * 0.55:
+        return chunk, [], True
+
+    edited = PLACEHOLDER.sub(lambda match: originals[match.group()], edited)
+    if len(edited) > len(passage) * 1.5:
+        return chunk, [], True
+    changes = [change[:300] for change in result.changes_summary] if edited != passage else []
+    return leading + edited + trailing, changes, False
+
 
 class Agent2Humanizer:
-    """Agent 2: The Remediation Specialist - Solves similarity, AI content, and tampering anomalies"""
-
-    def __init__(self, grok_client: GrokClient, agent1_checker: Optional[Agent1Checker] = None):
+    def __init__(self, grok_client, agent1_checker):
         self.grok_client = grok_client
         self.agent1_checker = agent1_checker
 
-    def remediate(self, text: str, agent1_report: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Execute complete remediation sequence based on humanizer principles"""
-        logs = []
-        start_time = time.time()
-        logs.append("Agent 2 [Remediation Specialist] received document dossier.")
-
-        flagged_segments = []
-        sim_score = 0
-        ai_score = 0
-        integrity = 100
-
-        if agent1_report:
-            flagged_segments = agent1_report.get("flagged_segments", [])
-            sim_score = agent1_report.get("similarity_score", agent1_report.get("plagiarism_score", 0))
-            ai_score = agent1_report.get("ai_score", 0)
-            integrity = agent1_report.get("integrity_score", 50)
-            logs.append(f"Flagged segments identified: {len(flagged_segments)} instances (Similarity: {sim_score}%, AI: {ai_score}%).")
+    def _edit_document(self, text):
+        citation_heading = REFERENCE_HEADING.search(text)
+        end = citation_heading.start() if citation_heading else len(text)
+        body, references = text[:end], text[end:]
+        protected = [match.span() for match in PROTECTED.finditer(body)]
+        chunks = split_text(body, protected)
+        warnings = []
+        changes = []
+        if self.grok_client.is_configured():
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                edits = list(pool.map(lambda item: edit_section(self.grok_client, *item), enumerate(chunks)))
+            rewritten = "".join(edited for edited, _, _ in edits) + references
+            changes = list(dict.fromkeys(change for _, notes, _ in edits for change in notes))
+            if any(failed for _, _, failed in edits):
+                warnings.append("Some sections were retained because the provider response could not be validated.")
         else:
-            logs.append("No prior report provided; performing holistic humanization and de-AI rewrite.")
+            rewritten = text
+            warnings.append("Configure an AI provider to edit prose. The original text was retained.")
 
-        before_scores = {
-            "similarity_score": sim_score,
-            "plagiarism_score": sim_score,
-            "ai_score": ai_score,
-            "integrity_score": integrity
-        }
+        # An oversized edit remains reviewable in its original form and within the audit limit.
+        if len(rewritten) > MAX_TEXT_LENGTH:
+            rewritten = text
+            changes = []
+            warnings.append("The edited text exceeded the document limit. The original text was retained.")
+        return rewritten, changes, warnings
 
-        # Step 1: Execute Humanizer engine rewrite
-        logs.append("Applying structural remediation: eliminating staging, balancing cadence, and removing stock AI vocabulary.")
-        humanize_result = self.grok_client.humanize_text(text, flagged_segments)
-        
-        rewritten_text = humanize_result.get("humanized_text", text)
-        changes = list(humanize_result.get("changes_summary", ["Restructured sentences for authentic human cadence."]))
-        tells_eliminated = list(humanize_result.get("tells_eliminated", ["Robotic staging", "Uniform sentence cadence"]))
-        improvements = humanize_result.get("improvements", "Transformed text to authentic human style with natural rhythm.")
-
-        # Clean any hidden zero-width bypass characters
-        for char in ['\u200b', '\u200c', '\u200d', '\ufeff', '\u00ad', '\u2060', '\u2061', '\u2062', '\u2063', '\u2064']:
-            if char in rewritten_text:
-                rewritten_text = rewritten_text.replace(char, '')
-                tells_eliminated.append("Hidden zero-width characters")
-
-        logs.append(f"Remediation generated. Eliminated {len(tells_eliminated)} structural markers and flags.")
-
-        # Step 2: Closed-Loop Verification with Agent 1
-        after_sim = max(2, int(sim_score * 0.12))
-        after_ai = max(5, int(ai_score * 0.15))
-        after_integrity = max(0, min(100, round(100 - (after_sim * 0.6 + after_ai * 0.4))))
-
-        if self.agent1_checker:
-            logs.append("Agent 2 initiating closed-loop verification pass.")
-            try:
-                verify_ai = self.grok_client.analyze_ai_content(rewritten_text)
-                after_ai = verify_ai.get("ai_score", after_ai)
-                after_integrity = max(0, min(100, round(100 - (after_sim * 0.6 + after_ai * 0.4))))
-                logs.append(f"Closed-loop verification confirmed: Overall Similarity dropped to {after_sim}%, AI to {after_ai}%.")
-            except Exception as e:
-                logs.append(f"Closed-loop verification finished with fallback: {e}")
-
-        after_scores = {
-            "similarity_score": after_sim,
-            "plagiarism_score": after_sim,
-            "ai_score": after_ai,
-            "integrity_score": after_integrity
-        }
-
-        duration = round(time.time() - start_time, 2)
-        logs.append(f"Agent 2 completed remediation in {duration}s.")
-
+    def remediate(self, text, before_scores=None, known_sources=()):
+        started = time.monotonic()
+        if before_scores is None:
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                baseline = pool.submit(self.agent1_checker.run_audit, text)
+                rewritten, changes, warnings = self._edit_document(text)
+                original_report = baseline.result()
+            before_scores = audit_summary(original_report)
+            known_sources = baseline_sources(original_report)
+        else:
+            rewritten, changes, warnings = self._edit_document(text)
+        verification = self.agent1_checker.run_audit(rewritten, known_sources)
         return {
             "original_text": text,
-            "humanized_text": rewritten_text,
+            "humanized_text": rewritten,
             "before_scores": before_scores,
-            "after_scores": after_scores,
+            "after_scores": audit_summary(verification),
+            "verification_sources": verification["sources"],
             "changes_summary": changes,
-            "tells_eliminated": tells_eliminated,
-            "improvements": improvements,
-            "duration": duration,
-            "agent_logs": logs
+            "tells_eliminated": [],
+            "improvements": "Edited for clarity and flow." if rewritten != text else "Original text retained.",
+            "warnings": warnings,
+            "duration": round(time.monotonic() - started, 2),
+            "agent_logs": ["Sentinel independently checked the returned text."],
         }
