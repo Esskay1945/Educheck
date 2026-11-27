@@ -102,8 +102,9 @@ def test_similarity_counts_unique_word_positions_and_preserves_offsets(monkeypat
     assert coverage["checked"] == 2
 
 
-def test_unavailable_search_has_no_numeric_score(monkeypatch):
-    monkeypatch.setattr(web_sources, "search", lambda _: ([], 4, 4))
+@pytest.mark.parametrize("failed_searches", [1, 4])
+def test_unavailable_search_has_no_numeric_score(monkeypatch, failed_searches):
+    monkeypatch.setattr(web_sources, "search", lambda _: ([], 4, failed_searches))
     score, _, _, coverage = check_similarity("A search failure needs a visible result.")
     assert score is None
     assert coverage["status"] == "unavailable"

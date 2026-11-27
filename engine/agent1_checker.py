@@ -283,7 +283,7 @@ def check_similarity(text, known_sources=()):
                     "source_url": source["url"], "source_title": source["title"],
                 })
 
-    if coverage["checked"] == 0 and (failed_searches == searches or candidates):
+    if coverage["checked"] == 0 and (failed_searches or candidates):
         coverage["message"] = "Web similarity is unavailable. Search or source retrieval failed."
         return None, [], [], coverage
     if failed_searches or coverage["checked"] < len(candidates):
