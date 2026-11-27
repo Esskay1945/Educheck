@@ -25,3 +25,14 @@ jobs:
       - run: python -m pytest -q
       - run: node --check static/educheck.js
       - run: gunicorn --check-config --preload app:app
+      - name: Build and start the deployment image
+        run: |
+          docker build --tag educheck-ci .
+          docker run --detach --rm --name educheck-ci \
+            --env EDUCHECK_ACCESS_TOKEN=ci-workspace-password \
+            --publish 127.0.0.1:8000:8000 educheck-ci
+          trap 'docker stop educheck-ci' EXIT
+          curl --fail --silent --show-error --retry 8 --retry-delay 1 --retry-connrefused http://127.0.0.1:8000/healthz
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8000/api/status)" = 401
+          curl --fail --silent --show-error --user educheck:ci-workspace-password http://127.0.0.1:8000/api/status
+          docker exec educheck-ci sh -c 'command -v antiword && tesseract --list-langs'

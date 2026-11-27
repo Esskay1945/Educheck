@@ -1,0 +1,9 @@
+*
+!requirements.txt
+!app.py
+!engine/
+!engine/*.py
+!templates/
+!templates/index.html
+!static/
+!static/educheck.js
